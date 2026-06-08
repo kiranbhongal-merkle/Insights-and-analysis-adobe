@@ -1,0 +1,18 @@
+runtime: nodejs18
+env: standard
+
+handlers:
+  - url: /static
+    static_dir: build/static
+
+  - url: /(.*\.(json|ico|js|css|png|jpg|svg))$
+    static_files: build/\1
+    upload: build/.*\.(json|ico|js|css|png|jpg|svg)$
+
+  - url: /.*
+    static_files: build/index.html
+    upload: build/index.html
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
