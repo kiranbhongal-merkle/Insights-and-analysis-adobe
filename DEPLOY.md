@@ -13,7 +13,7 @@ Browser (on VPN) ──▶ Cloud Run (Express + React)
 ## 1. One-time setup
 
 ```bash
-export PROJECT_ID=vdc200007-samsung-rhq-prod
+export PROJECT_ID=vdc200006-mena-eng-dev
 export REGION=us-central1
 gcloud config set project $PROJECT_ID
 ```

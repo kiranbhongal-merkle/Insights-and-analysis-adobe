@@ -10,8 +10,8 @@ substitutions:
   _REGION: us-central1
   _REPO: webapp
   _SERVICE: analytics-webapp
-  _BQ_DATASET: 'RHQ_Insights_And_Analysis'
-  _BQ_TABLE: 'UserJourney_Analysis'
+  _BQ_DATASET: 'RHQ_INSIGHTS'
+  _BQ_TABLE: 'User_Journey_Analysis'
   _RUNTIME_SA: 'analytics-webapp@${PROJECT_ID}.iam.gserviceaccount.com'
   # internal = VPN/VPC only (recommended). Use "all" for a public URL.
   _INGRESS: internal

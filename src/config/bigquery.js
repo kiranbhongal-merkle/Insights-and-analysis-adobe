@@ -3,9 +3,9 @@
 // ============================================================
 
 export const BQ_CONFIG = {
-  projectId: 'vdc200007-samsung-rhq-prod',
-  dataset: '3_adobe',
-  table: 'adobe_analytics_*',
+  projectId: 'vdc200006-mena-eng-dev',
+  dataset: 'RHQ_INSIGHTS',
+  table: 'User_Journey_Analysis',
 };
 
 export const FX_RATES = {
