@@ -63,7 +63,7 @@ gcloud projects add-iam-policy-binding vdc200007-samsung-rhq-prod \
 ## Data Flow
 
 ```
-BigQuery (vdc200007-samsung-rhq-prod.3_adobe.*)
+BigQuery (vdc200006-mena-eng-dev.RHQ_INSIGHTS.User_journey_Analysis_Adobe*)
     ↓ REST API (BigQuery Jobs REST API)
 React App (useBigQuery hook)
     ↓ 
@@ -134,7 +134,7 @@ Go to **Custom Report → New report**, select:
 ## SQL Query
 
 The full BigQuery SQL (v3 with USD normalisation) is in:
-`user_journey_analysis_v3.sql`
+`User_journey_Analysis_Adobe`
 
 Run it in BigQuery and save results to a table for faster dashboard queries:
 
