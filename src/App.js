@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   { path: '/exits',       icon: DoorOpen,        label: 'Page Exits'       },
   { path: '/country',     icon: Globe,           label: 'Country'          },
   { path: '/usertype',    icon: Users,           label: 'User Type'        },
-  { path: '/browser',     icon: Chrome,          label: 'Browser'          },
+  { path: '/browser',     icon: Chrome,          label: 'Competitor Device' },
   { path: '/lasttouch',   icon: Target,          label: 'Last Touch'       },
   { path: '/custom',      icon: FileSearch,      label: 'Custom Report'    },
   { path: '/glossary',    icon: BookOpen,        label: 'Glossary'         },
@@ -160,7 +160,7 @@ export default function App() {
 
       if (!demoCsvLoaded.current) {
         const demo = await loadDemoCsvIntoWindow({
-          url: `${process.env.PUBLIC_URL || ''}/demo_data/test_data.csv`,
+          url: `${process.env.PUBLIC_URL || ''}/demo_data/Test_new.csv`,
         });
         if (cancelled) return;
         if (demo.loaded) demoCsvLoaded.current = true;

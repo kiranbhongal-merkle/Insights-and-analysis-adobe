@@ -12,8 +12,8 @@ import { buildSegmentInsights } from '../utils/insights';
 
 const SOURCE = 'browser';
 
-const BROWSER_CSV_COLUMNS = [
-  { key: 'dim', header: 'Browser' },
+const DEVICE_CSV_COLUMNS = [
+  { key: 'dim', header: 'Device manufacturer' },
   { key: 'visits', header: 'Visits' },
   { key: 'conv', header: 'Conversions' },
   { key: 'rate', header: 'Conv rate %' },
@@ -22,6 +22,8 @@ const BROWSER_CSV_COLUMNS = [
 
 export default function BrowserPage() {
   const data = SAMPLE_DATA.browser;
+  const byVisits = [...data].sort((a, b) => b.visits - a.visits);
+  const byRate = [...data].sort((a, b) => b.rate - a.rate);
   const summary = getOverviewSummary();
   const { drill: segmentDrill, openDrill, closeDrill } = useAnalysisDrill(SOURCE);
   const [kpiDrill, setKpiDrill] = useState(null);
@@ -32,8 +34,8 @@ export default function BrowserPage() {
     <AnalysisPageFrame drill={drill} onCloseDrill={closeAll}>
       <div className="page-toolbar">
         <InfoHint title="How to read">
-          <p>Compare conversion rate across browser versions.</p>
-          <p>A browser well below the 0.17% baseline may have a checkout rendering or compatibility issue — click to see market and channel drivers.</p>
+          <p>Shows which <strong>device manufacturer</strong> visitors use when browsing Samsung products — Samsung, Apple, and other brands.</p>
+          <p>Compare conversion across device types to see whether competitor-device users convert differently from Samsung-device users. Click any chart or row to drill into market and channel drivers.</p>
         </InfoHint>
       </div>
 
@@ -50,19 +52,31 @@ export default function BrowserPage() {
         ))}
       </div>
 
-      <InsightsPanel insights={buildSegmentInsights(data, { noun: 'browser', nounPlural: 'browsers' })} />
+      <InsightsPanel insights={buildSegmentInsights(data, { noun: 'device brand', nounPlural: 'device brands' })} />
 
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Conversion rate by browser</span>
-          <InfoHint className="info-hint--sm" title="Conversion rate by browser">
-            <p><strong>Conv rate</strong> = conversions ÷ visits per browser version.</p>
-            <p>Bar colour: <strong style={{ color: 'var(--green)' }}>green ≥0.3%</strong>, blue ≥0.15%, <strong style={{ color: 'var(--red)' }}>red below</strong>. A red bar on a high-traffic browser often means a checkout rendering bug. <strong>Click</strong> to drill in.</p>
+          <span className="card-title">Visits by device manufacturer</span>
+          <InfoHint className="info-hint--sm" title="Visits by device manufacturer">
+            <p>Visit volume per device brand, ranked highest first.</p>
+            <p>Reveals how much traffic arrives on Samsung vs competitor devices. <strong>Click a bar</strong> to drill in.</p>
           </InfoHint>
-          <DownloadCsvButton filename="browser-conv-rate" columns={BROWSER_CSV_COLUMNS} rows={data} />
+          <DownloadCsvButton filename="competitor-device-visits" columns={DEVICE_CSV_COLUMNS} rows={byVisits} />
+        </div>
+        <HBarChart data={byVisits} xKey="visits" yKey="dim" formatX={fmtNum} onBarClick={dim => openDrill(dim, 'visits')} />
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Conversion rate by device manufacturer</span>
+          <InfoHint className="info-hint--sm" title="Conversion rate by device manufacturer">
+            <p><strong>Conv rate</strong> = conversions ÷ visits per device brand, ranked highest first.</p>
+            <p>Bar colour: <strong style={{ color: 'var(--green)' }}>green ≥0.3%</strong>, blue ≥0.15%, <strong style={{ color: 'var(--red)' }}>red below</strong>. <strong>Click</strong> to drill in.</p>
+          </InfoHint>
+          <DownloadCsvButton filename="competitor-device-conv-rate" columns={DEVICE_CSV_COLUMNS} rows={byRate} />
         </div>
         <HBarChart
-          data={data}
+          data={byRate}
           xKey="rate"
           yKey="dim"
           formatX={v => v + '%'}
@@ -73,31 +87,19 @@ export default function BrowserPage() {
 
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Visits by browser</span>
-          <InfoHint className="info-hint--sm" title="Visits by browser">
-            <p>Visit volume per browser version, ranked highest first.</p>
-            <p>Use it to weigh how much a low-converting browser actually matters. <strong>Click a bar</strong> to drill in.</p>
-          </InfoHint>
-          <DownloadCsvButton filename="browser-visits" columns={BROWSER_CSV_COLUMNS} rows={data} />
-        </div>
-        <HBarChart data={data} xKey="visits" yKey="dim" formatX={fmtNum} onBarClick={dim => openDrill(dim, 'visits')} />
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Browser performance table</span>
-          <InfoHint className="info-hint--sm" title="Browser performance table">
-            <p>Visits, conversions, conv rate and revenue per browser version.</p>
+          <span className="card-title">Device manufacturer performance table</span>
+          <InfoHint className="info-hint--sm" title="Device manufacturer performance table">
+            <p>Visits, conversions, conv rate and revenue per device brand, sorted by visits (highest first).</p>
             <p><strong>Click a row</strong> to drill into the markets and channels behind it.</p>
           </InfoHint>
-          <DownloadCsvButton filename="browser-performance" columns={BROWSER_CSV_COLUMNS} rows={data} />
+          <DownloadCsvButton filename="competitor-device-performance" columns={DEVICE_CSV_COLUMNS} rows={byVisits} />
         </div>
         <table className="data-table">
           <thead>
-            <tr><th>Browser</th><th className="num">Visits</th><th className="num">Conv</th><th className="num">Rate</th><th className="num">Revenue</th></tr>
+            <tr><th>Device manufacturer</th><th className="num">Visits</th><th className="num">Conv</th><th className="num">Rate</th><th className="num">Revenue</th></tr>
           </thead>
           <tbody>
-            {data.map(r => (
+            {byVisits.map(r => (
               <tr key={r.dim} className="data-table-row--clickable" onClick={() => openDrill(r.dim, 'rate')}>
                 <td>{r.dim}</td>
                 <td className="num">{fmtNum(r.visits)}</td>

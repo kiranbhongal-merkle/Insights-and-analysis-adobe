@@ -37,7 +37,7 @@ const METRICS = [
     name: 'Avg Session',
     measures: 'Mean session length, in minutes.',
     formula: 'total_session_mins ÷ session_count',
-    notes: 'Visit-weighted when rolled up across segments.',
+    notes: 'Shown when session-duration data is present in the export; otherwise displays 0m.',
   },
   {
     name: 'Exits',
@@ -83,7 +83,7 @@ const DIMENSIONS = [
   { name: 'Last-Touch Channel', desc: 'The final channel before a purchase.', field: 'last_touch_channel', example: 'Email, Pmax, Session Refresh' },
   { name: 'Device', desc: 'Device category of the session.', field: 'device_category', example: 'Desktop, Mobile, Tablet' },
   { name: 'User Type', desc: 'Whether the visitor is new or returning.', field: 'user_type', example: 'New, Returning' },
-  { name: 'Browser', desc: 'Browser (and version where available).', field: 'browser', example: 'Chrome, Safari, Samsung Browser' },
+  { name: 'Competitor Device', desc: 'Device manufacturer the visitor uses when browsing Samsung (from the manufacturer column).', field: 'manufacturer', example: 'Samsung, Apple, Other Androids' },
   { name: 'Country', desc: 'Visitor market, as an ISO 3-letter code.', field: 'country', example: 'usa, sau, ind' },
   { name: 'Funnel Step', desc: 'Stage of the purchase journey.', field: 'derived from reached_*', example: 'Landing → Product → Cart → Checkout → Purchase' },
   { name: 'Exit Page', desc: 'The last page viewed in a session.', field: 'top_exit_page', example: '/cart, /checkout' },

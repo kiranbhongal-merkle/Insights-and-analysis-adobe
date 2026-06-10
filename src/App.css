@@ -425,7 +425,7 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* ── Funnel Bars ────────────────────────────────────────────── */
+/* ── Funnel Bars (legacy row layout) ───────────────────────── */
 .funnel-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .funnel-row--drillable .funnel-bar-btn:not(:disabled) { cursor: pointer; }
 .funnel-row--drillable:hover .funnel-bar-fill,
@@ -441,6 +441,85 @@ body {
 .funnel-bar-fill { height: 100%; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 500; color: #fff; min-width: 4px; border-radius: 3px; transition: filter 0.15s ease; }
 .funnel-count { width: 80px; font-size: 12px; font-weight: 600; color: var(--text); flex-shrink: 0; }
 .funnel-drop  { width: 72px; font-size: 11px; text-align: right; flex-shrink: 0; }
+
+/* ── Inverted-triangle funnel ─────────────────────────────── */
+.funnel-pyramid {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 16px 12px 8px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.funnel-pyramid-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.funnel-pyramid-segment-btn {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: default;
+}
+.funnel-pyramid-row--drillable .funnel-pyramid-segment-btn:not(:disabled) { cursor: pointer; }
+.funnel-pyramid-segment {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s ease, box-shadow 0.15s ease;
+}
+.funnel-pyramid-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 16px;
+  text-align: center;
+  pointer-events: none;
+}
+.funnel-pyramid-step {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  line-height: 1.25;
+}
+.funnel-pyramid-visitors {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.funnel-pyramid-meta {
+  min-width: 76px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.funnel-pyramid-drop-empty {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+}
+.funnel-pyramid-row--drillable:hover .funnel-pyramid-segment,
+.funnel-pyramid-row--active .funnel-pyramid-segment {
+  filter: brightness(1.08);
+  box-shadow: 0 3px 10px rgba(50, 102, 173, 0.28);
+}
+.funnel-pyramid-row--active {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  margin: 0 -8px;
+}
 .funnel-drop-btn {
   display: inline-flex; align-items: center; gap: 1px;
   background: none; border: none; font: inherit; font-weight: 600;
@@ -494,6 +573,8 @@ body {
 
 /* ── Grid Layouts ───────────────────────────────────────────── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-2--charts { align-items: start; }
+.grid-2--charts .chart-wrap { min-width: 0; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
 /* ── Buttons ─────────────────────────────────────────────────── */
@@ -571,6 +652,12 @@ button.chip { appearance: none; }
 
 /* ── Chart Wrapper ──────────────────────────────────────────── */
 .chart-wrap { width: 100%; }
+.chart-wrap--donut .recharts-legend-item-text {
+  color: var(--text2) !important;
+  font-size: 11px !important;
+}
+.chart-wrap .recharts-cartesian-axis-tick-value { fill: var(--text2); }
+.chart-wrap .recharts-legend-item-text { color: var(--text2) !important; }
 
 /* ── Settings ───────────────────────────────────────────────── */
 .settings-section { margin-bottom: 28px; }

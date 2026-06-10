@@ -235,7 +235,7 @@ export function getReportSections() {
     exitsSection(),
     segmentSection({ id: 'country', title: 'Country', datasetKey: 'country', noun: 'market', nounPlural: 'markets' }),
     segmentSection({ id: 'usertype', title: 'User Type', datasetKey: 'usertype', noun: 'group', nounPlural: 'groups' }),
-    segmentSection({ id: 'browser', title: 'Browser', datasetKey: 'browser', noun: 'browser', nounPlural: 'browsers' }),
+    segmentSection({ id: 'browser', title: 'Competitor Device', datasetKey: 'browser', noun: 'device brand', nounPlural: 'device brands' }),
     segmentSection({ id: 'lasttouch', title: 'Last Touch', datasetKey: 'lasttouch', noun: 'channel', nounPlural: 'channels' }),
   ];
 }

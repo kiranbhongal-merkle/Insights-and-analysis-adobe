@@ -32,7 +32,7 @@ export const ANALYSES = {
   A5_KPI_SUMMARY:        { label: 'KPI Summary',          color: '#16a085' },
   A6_COUNTRY:            { label: 'Country',              color: '#2980b9' },
   A7_USER_TYPE:          { label: 'New vs Returning',     color: '#d35400' },
-  A8_BROWSER:            { label: 'Browser',              color: '#c0392b' },
+  A8_BROWSER:            { label: 'Competitor Device',    color: '#c0392b' },
   A9_LAST_TOUCH_CHANNEL: { label: 'Last-Touch Channel',   color: '#1abc9c' },
 };
 

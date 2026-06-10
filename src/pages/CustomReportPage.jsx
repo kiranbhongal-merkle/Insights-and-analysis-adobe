@@ -3,10 +3,11 @@ import { Plus, Trash2, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { SAMPLE_DATA, fmtNum, fmtUSD, fmtPct, CHART_COLORS } from '../utils/helpers';
 import InfoHint from '../components/InfoHint';
 import DownloadCsvButton from '../components/DownloadCsvButton';
+import { DonutChart } from '../components/Charts';
 import { ANALYSIS_METRIC_LABELS, ANALYSES } from '../config/bigquery';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, LineChart, Line, PieChart, Pie
+  ResponsiveContainer, Cell, LineChart, Line, LabelList,
 } from 'recharts';
 
 const ALL_METRICS = [
@@ -78,16 +79,13 @@ function ReportChart({ report, data }) {
 
   if (report.chartType === 'pie') {
     return (
-      <ResponsiveContainer width="100%" height={280}>
-        <PieChart>
-          <Pie data={data} dataKey={primaryMetric} nameKey="dimension" cx="50%" cy="50%"
-            innerRadius="40%" outerRadius="70%"
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}>
-            {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-          </Pie>
-          <Tooltip contentStyle={TIP} formatter={v => formatMetricValue(primaryMetric, v)} />
-        </PieChart>
-      </ResponsiveContainer>
+      <DonutChart
+        data={data}
+        nameKey="dimension"
+        valueKey={primaryMetric}
+        height={320}
+        formatValue={v => formatMetricValue(primaryMetric, v)}
+      />
     );
   }
 
@@ -110,17 +108,21 @@ function ReportChart({ report, data }) {
 
   if (report.chartType === 'horizontal_bar') {
     const h = Math.max(280, data.length * 36 + 60);
+    const yWidth = Math.min(220, Math.max(120, data.reduce((m, r) => Math.max(m, String(r.dimension || '').length), 0) * 7 + 20));
     return (
       <ResponsiveContainer width="100%" height={h}>
-        <BarChart data={data} layout="vertical" margin={{ left: 10, right: 40 }}>
+        <BarChart data={data} layout="vertical" margin={{ top: 8, left: 4, right: 56, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-          <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text2)' }}
+          <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text2)' }} tickLine={false} axisLine={false} tickMargin={6}
             tickFormatter={v => formatMetricValue(primaryMetric, v)} />
-          <YAxis type="category" dataKey="dimension" width={150} tick={{ fontSize: 11, fill: 'var(--text2)' }} />
+          <YAxis type="category" dataKey="dimension" width={yWidth} tick={{ fontSize: 11, fill: 'var(--text2)' }} tickLine={false} axisLine={false} tickMargin={8} />
           <Tooltip contentStyle={TIP} formatter={v => formatMetricValue(primaryMetric, v)} />
           <Bar dataKey={primaryMetric} radius={[0, 3, 3, 0]}
             name={ANALYSIS_METRIC_LABELS[report.analysis]?.[primaryMetric] || primaryMetric}>
             {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} fillOpacity={0.8} />)}
+            <LabelList dataKey={primaryMetric} position="right" offset={8}
+              formatter={v => formatMetricValue(primaryMetric, v)}
+              style={{ fontSize: 10, fontWeight: 600, fill: 'var(--text2)' }} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -128,15 +130,18 @@ function ReportChart({ report, data }) {
   }
 
   // default: vertical bar
+  const bottom = Math.min(72, Math.max(28, data.reduce((m, r) => Math.max(m, String(r.dimension || '').length), 0) * 2.8));
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} margin={{ bottom: 20 }}>
+    <ResponsiveContainer width="100%" height={280 + bottom - 20}>
+      <BarChart data={data} margin={{ top: 12, left: 4, right: 12, bottom }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-        <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: 'var(--text2)' }} angle={-20} textAnchor="end" />
-        <YAxis tick={{ fontSize: 10, fill: 'var(--text2)' }} tickFormatter={v => formatMetricValue(primaryMetric, v)} />
+        <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: 'var(--text2)' }} tickLine={false} axisLine={false}
+          angle={-28} textAnchor="end" height={bottom} interval={0} tickMargin={8} />
+        <YAxis width={52} tick={{ fontSize: 10, fill: 'var(--text2)' }} tickLine={false} axisLine={false} tickMargin={4}
+          tickFormatter={v => formatMetricValue(primaryMetric, v)} />
         <Tooltip contentStyle={TIP} formatter={v => formatMetricValue(primaryMetric, v)} />
         {report.metrics.map((m, i) => (
-          <Bar key={m} dataKey={m} fill={CHART_COLORS[i]} radius={[3,3,0,0]} fillOpacity={0.8}
+          <Bar key={m} dataKey={m} fill={CHART_COLORS[i]} radius={[3, 3, 0, 0]} fillOpacity={0.8}
             name={ANALYSIS_METRIC_LABELS[report.analysis]?.[m] || m} />
         ))}
       </BarChart>

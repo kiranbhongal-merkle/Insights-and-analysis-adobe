@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { SAMPLE_DATA, fmtNum, fmtUSD, fmtPct, getOverviewSummary } from '../utils/helpers';
 import { SUMMARY_KPIS } from '../utils/analysisPageKpis';
-import { HBarChart, VBarChart, DonutChart } from '../components/Charts';
+import { HBarChart, VBarChart } from '../components/Charts';
 import InfoHint from '../components/InfoHint';
 import InsightsPanel from '../components/InsightsPanel';
 import ClickableMetricCard from '../components/ClickableMetricCard';
@@ -22,6 +22,15 @@ const LASTTOUCH_CSV_COLUMNS = [
 
 export default function LastTouchPage() {
   const data = SAMPLE_DATA.lasttouch;
+  const byRev = [...data].sort((a, b) => b.rev - a.rev);
+  const byVisits = [...data].sort((a, b) => b.visits - a.visits);
+  const byRate = [...data].sort((a, b) => b.rate - a.rate);
+  const byEfficiency = [...data]
+    .map(d => ({
+      ...d,
+      efficiency: parseFloat(((d.conv / d.visits) * 10000).toFixed(1)),
+    }))
+    .sort((a, b) => b.efficiency - a.efficiency);
   const summary = getOverviewSummary();
   const { drill: segmentDrill, openDrill, closeDrill } = useAnalysisDrill(SOURCE);
   const [kpiDrill, setKpiDrill] = useState(null);
@@ -74,10 +83,10 @@ export default function LastTouchPage() {
             <p><strong>Last-touch</strong> credits the final channel before purchase. Bar = USD revenue closed by that channel.</p>
             <p><strong>Click a bar</strong> to break revenue down by country, device and entry channel.</p>
           </InfoHint>
-          <DownloadCsvButton filename="lasttouch-revenue" columns={LASTTOUCH_CSV_COLUMNS} rows={data} />
+          <DownloadCsvButton filename="lasttouch-revenue" columns={LASTTOUCH_CSV_COLUMNS} rows={byRev} />
         </div>
         <HBarChart
-          data={data}
+          data={byRev}
           xKey="rev"
           yKey="dim"
           formatX={fmtUSD}
@@ -93,10 +102,10 @@ export default function LastTouchPage() {
               <p><strong>Conv rate</strong> = conversions ÷ visits for each last-touch channel — its closing efficiency.</p>
               <p>Colour: <strong style={{ color: 'var(--green)' }}>green ≥0.3%</strong>, blue ≥0.1%, <strong style={{ color: 'var(--red)' }}>red below</strong>. <strong>Click</strong> to drill in.</p>
             </InfoHint>
-            <DownloadCsvButton filename="lasttouch-conv-rate" columns={LASTTOUCH_CSV_COLUMNS} rows={data} />
+            <DownloadCsvButton filename="lasttouch-conv-rate" columns={LASTTOUCH_CSV_COLUMNS} rows={byRate} />
           </div>
           <HBarChart
-            data={data}
+            data={byRate}
             xKey="rate"
             yKey="dim"
             formatX={v => v + '%'}
@@ -106,14 +115,20 @@ export default function LastTouchPage() {
         </div>
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Revenue share</span>
-            <InfoHint className="info-hint--sm" title="Revenue share">
-              <p>Each slice = that channel's share of total last-touch revenue.</p>
-              <p>Shows how concentrated closing revenue is across channels.</p>
+            <span className="card-title">Revenue share by channel</span>
+            <InfoHint className="info-hint--sm" title="Revenue share by channel">
+              <p>Channels ranked by USD revenue (highest first).</p>
+              <p>Shows how closing revenue is distributed across last-touch channels. <strong>Click a bar</strong> to drill in.</p>
             </InfoHint>
-            <DownloadCsvButton filename="lasttouch-revenue-share" columns={LASTTOUCH_CSV_COLUMNS} rows={data} />
+            <DownloadCsvButton filename="lasttouch-revenue-share" columns={LASTTOUCH_CSV_COLUMNS} rows={byRev} />
           </div>
-          <DonutChart data={data} nameKey="dim" valueKey="rev" />
+          <HBarChart
+            data={byRev}
+            xKey="rev"
+            yKey="dim"
+            formatX={fmtUSD}
+            onBarClick={dim => openSegment(dim, 'rev')}
+          />
         </div>
       </div>
 
@@ -124,10 +139,10 @@ export default function LastTouchPage() {
             <p>Paired bars: <strong>blue</strong> = visits, <strong>orange</strong> = conversions, per channel.</p>
             <p>A tall blue bar with a tiny orange one = lots of traffic that rarely closes. <strong>Click a bar</strong> to drill in.</p>
           </InfoHint>
-          <DownloadCsvButton filename="lasttouch-visits-vs-conversions" columns={LASTTOUCH_CSV_COLUMNS} rows={data} />
+          <DownloadCsvButton filename="lasttouch-visits-vs-conversions" columns={LASTTOUCH_CSV_COLUMNS} rows={byVisits} />
         </div>
         <VBarChart
-          data={data}
+          data={byVisits}
           bars={[
             { key: 'visits', label: 'Visits', color: '#3266ad' },
             { key: 'conv', label: 'Conversions', color: '#e8913a' },
@@ -148,11 +163,11 @@ export default function LastTouchPage() {
             <DownloadCsvButton
               filename="lasttouch-visit-ranking"
               columns={LASTTOUCH_CSV_COLUMNS}
-              rows={[...data].sort((a, b) => b.visits - a.visits)}
+              rows={byVisits}
             />
           </div>
           <HBarChart
-            data={[...data].sort((a, b) => b.visits - a.visits)}
+            data={byVisits}
             xKey="visits"
             yKey="dim"
             formatX={fmtNum}
@@ -169,14 +184,11 @@ export default function LastTouchPage() {
             <DownloadCsvButton
               filename="lasttouch-efficiency-index"
               columns={[...LASTTOUCH_CSV_COLUMNS, { key: 'efficiency', header: 'Efficiency (conv/visits x10k)' }]}
-              rows={data.map(d => ({ ...d, efficiency: parseFloat(((d.conv / d.visits) * 10000).toFixed(1)) }))}
+              rows={byEfficiency}
             />
           </div>
           <HBarChart
-            data={data.map(d => ({
-              ...d,
-              efficiency: parseFloat(((d.conv / d.visits) * 10000).toFixed(1)),
-            }))}
+            data={byEfficiency}
             xKey="efficiency"
             yKey="dim"
             formatX={v => v}
@@ -193,7 +205,7 @@ export default function LastTouchPage() {
             <p>Visits, conversions, conv rate and USD revenue per last-touch channel.</p>
             <p>Rate badge: <strong>green ≥0.3%</strong>, blue ≥0.15%, amber below. <strong>Click a row</strong> to drill into its drivers.</p>
           </InfoHint>
-          <DownloadCsvButton filename="lasttouch-performance" columns={LASTTOUCH_CSV_COLUMNS} rows={data} />
+          <DownloadCsvButton filename="lasttouch-performance" columns={LASTTOUCH_CSV_COLUMNS} rows={byRev} />
         </div>
         <table className="data-table">
           <thead>
@@ -206,7 +218,7 @@ export default function LastTouchPage() {
             </tr>
           </thead>
           <tbody>
-            {data.map(r => (
+            {byRev.map(r => (
               <tr
                 key={r.dim}
                 className="data-table-row--clickable"

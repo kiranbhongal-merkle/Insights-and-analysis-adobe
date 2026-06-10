@@ -276,7 +276,7 @@ export const DRILL_DIMENSION_META = {
   lasttouch: { label: 'Last touch channel', dimKey: 'dim' },
   device:    { label: 'Device type',        dimKey: 'dim' },
   usertype:  { label: 'User type',          dimKey: 'dim' },
-  browser:   { label: 'Browser',            dimKey: 'dim' },
+  browser:   { label: 'Device manufacturer', dimKey: 'dim' },
   country:   { label: 'Country',            dimKey: 'dim' },
   kpi:       { label: 'Week',               dimKey: 'date' },
 };
@@ -358,7 +358,7 @@ export const ANALYSIS_SOURCE_META = {
   device:    { sourceId: 'device',    title: 'Device',             field: 'dim' },
   usertype:  { sourceId: 'usertype',  title: 'User type',          field: 'dim' },
   country:   { sourceId: 'country',   title: 'Country',            field: 'dim' },
-  browser:   { sourceId: 'browser',   title: 'Browser',            field: 'dim' },
+  browser:   { sourceId: 'browser',   title: 'Competitor Device',  field: 'dim' },
   lasttouch: { sourceId: 'lasttouch', title: 'Last touch channel', field: 'dim' },
   exits:     { sourceId: 'exits',     title: 'Exit page',          field: 'label' },
 };
@@ -486,11 +486,11 @@ export function getSegmentDrillInsights(sourceId, segmentName, metricKey, rows, 
     });
   }
 
-  if (sourceId === 'browser' && /samsung b\. 29/i.test(segmentName)) {
+  if (sourceId === 'browser' && /apple/i.test(segmentName)) {
     insights.push({
-      title: 'Browser-specific regression',
-      body: 'Run checkout smoke tests on Samsung Browser 29 WebView; payment SDK and autofill are common failure points.',
-      severity: 'red',
+      title: 'Competitor device traffic',
+      body: 'Apple-device visitors may be comparison shopping — tailor messaging and retargeting for cross-device conversion.',
+      severity: 'amber',
     });
   }
 

@@ -2,17 +2,19 @@
 // Demo CSV loader
 // ------------------------------------------------------------
 // Parses the raw, row-level analytics export shipped in
-// /public/demo_data/test_data.csv and aggregates it into the
+// /public/demo_data/Test_new.csv and aggregates it into the
 // dataset shapes the dashboard pages expect (kpi, funnel,
 // channel, device, country, browser, lasttouch,
 // usertype, exits + a site-wide overview summary).
 //
-// Raw CSV columns:
+// Raw CSV columns (Test_new.csv):
 //   date, traffic_source, last_touch_channel, user_type, country,
-//   browser, device_category, visits, reached_landing, reached_pdp,
-//   reached_atc, reached_cart, reached_checkout, converted,
-//   add_to_cart_events, checkout_events, purchase_events, revenue_usd,
-//   total_session_mins, session_count, top_exit_page, top_exit_page_count
+//   device_category, manufacturer, visits, users, reached_landing,
+//   reached_pdp, reached_atc, reached_cart, reached_checkout, converted,
+//   cart_added, orders, purchases, bounced_visits, total_pageviews,
+//   units_sold, revenue_usd, session_count, top_exit_page, top_exit_page_count
+//
+// Legacy column names (test_data.csv) are still accepted via normalizeRawRow.
 // ============================================================
 
 function parseCsvLine(line) {
@@ -54,6 +56,39 @@ function round2(n) {
 
 function convRate(visits, conv) {
   return visits > 0 ? round2((conv / visits) * 100) : 0;
+}
+
+/** Map new or legacy CSV / API row shapes onto one internal schema. */
+export function normalizeRawRow(r) {
+  if (!r) return r;
+  return {
+    date: r.date,
+    traffic_source: r.traffic_source,
+    last_touch_channel: r.last_touch_channel,
+    user_type: r.user_type,
+    country: r.country,
+    browser: r.browser ?? r.manufacturer,
+    device_category: r.device_category,
+    visits: num(r.visits),
+    users: num(r.users),
+    reached_landing: num(r.reached_landing),
+    reached_pdp: num(r.reached_pdp),
+    reached_atc: num(r.reached_atc),
+    reached_cart: num(r.reached_cart),
+    reached_checkout: num(r.reached_checkout),
+    converted: num(r.converted),
+    add_to_cart_events: num(r.add_to_cart_events ?? r.cart_added),
+    checkout_events: num(r.checkout_events),
+    purchase_events: num(r.purchase_events ?? r.purchases),
+    revenue_usd: num(r.revenue_usd),
+    total_session_mins: num(r.total_session_mins),
+    session_count: num(r.session_count),
+    top_exit_page: r.top_exit_page,
+    top_exit_page_count: num(r.top_exit_page_count),
+    bounced_visits: num(r.bounced_visits),
+    total_pageviews: num(r.total_pageviews),
+    units_sold: num(r.units_sold),
+  };
 }
 
 // Aggregate raw rows by a dimension key into running metric buckets.
@@ -128,7 +163,9 @@ function toConvRows(map, { limit = 14, sumExtra = true } = {}) {
  * Returns the object injected onto window.__DEMO_DATA__.
  */
 export function buildDemoDataFromRows(rawRows, { dateFrom, dateTo } = {}) {
-  const rows = (rawRows || []).filter(r => {
+  const rows = (rawRows || [])
+    .map(normalizeRawRow)
+    .filter(r => {
     if (dateFrom && r.date < dateFrom) return false;
     if (dateTo && r.date > dateTo) return false;
     return true;
@@ -259,7 +296,7 @@ export function buildDemoDataFromRows(rawRows, { dateFrom, dateTo } = {}) {
  * The actual aggregation happens later (per selected date range) in
  * buildDemoDataFromRows, driven by applyDemoDateRange.
  */
-export async function loadDemoCsvIntoWindow({ url = '/demo_data/test_data.csv' } = {}) {
+export async function loadDemoCsvIntoWindow({ url = '/demo_data/Test_new.csv' } = {}) {
   if (typeof window === 'undefined') return { loaded: false, reason: 'no-window' };
 
   const res = await fetch(url, { cache: 'no-store' });
@@ -283,30 +320,13 @@ export async function loadDemoCsvIntoWindow({ url = '/demo_data/test_data.csv' }
     const c = parseCsvLine(lines[i]);
     const date = c[idx.date];
     if (!date) continue;
-    rows.push({
-      date,
-      traffic_source: c[idx.traffic_source],
-      last_touch_channel: c[idx.last_touch_channel],
-      user_type: c[idx.user_type],
-      country: c[idx.country],
-      browser: c[idx.browser],
-      device_category: c[idx.device_category],
-      visits: num(c[idx.visits]),
-      reached_landing: num(c[idx.reached_landing]),
-      reached_pdp: num(c[idx.reached_pdp]),
-      reached_atc: num(c[idx.reached_atc]),
-      reached_cart: num(c[idx.reached_cart]),
-      reached_checkout: num(c[idx.reached_checkout]),
-      converted: num(c[idx.converted]),
-      add_to_cart_events: num(c[idx.add_to_cart_events]),
-      checkout_events: num(c[idx.checkout_events]),
-      purchase_events: num(c[idx.purchase_events]),
-      revenue_usd: num(c[idx.revenue_usd]),
-      total_session_mins: num(c[idx.total_session_mins]),
-      session_count: num(c[idx.session_count]),
-      top_exit_page: c[idx.top_exit_page],
-      top_exit_page_count: num(c[idx.top_exit_page_count]),
-    });
+
+    const raw = {};
+    for (const h of header) {
+      raw[h] = c[idx[h]];
+    }
+    raw.date = date;
+    rows.push(normalizeRawRow(raw));
   }
 
   if (!rows.length) return { loaded: false, reason: 'no-rows' };
