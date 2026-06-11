@@ -23,7 +23,7 @@ if ($LASTEXITCODE -ne 0) {
     --source . `
     --region $Region `
     --platform managed `
-    --service-account "analytics-webapp@${ProjectId}.iam.gserviceaccount.com" `
+    --service-account "user-journey@${ProjectId}.iam.gserviceaccount.com" `
     --ingress $Ingress `
     --no-allow-unauthenticated `
     --set-env-vars "BQ_PROJECT=$ProjectId,BQ_DATASET=RHQ_INSIGHTS,BQ_TABLE=User_Journey_Analysis_Adobe,BQ_LOCATION=US" `

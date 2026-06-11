@@ -39,18 +39,18 @@ gcloud artifacts repositories create webapp \
   --repository-format=docker --location=$REGION
 ```
 
-Create a runtime service account and grant BigQuery read:
+Create a runtime service account and grant BigQuery read (skip if using the existing `user-journey` SA):
 
 ```bash
-gcloud iam service-accounts create analytics-webapp \
-  --display-name="Analytics WebApp runtime"
+# Existing runtime SA for this project:
+# user-journey@vdc200006-mena-eng-dev.iam.gserviceaccount.com
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:analytics-webapp@$PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:user-journey@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataViewer"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:analytics-webapp@$PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:user-journey@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.jobUser"
 ```
 
@@ -177,19 +177,19 @@ roles on project `vdc200006-mena-eng-dev`:
 | `roles/storage.objectAdmin` on bucket `{PROJECT_ID}_cloudbuild` | Upload build source |
 | `roles/run.admin` or `roles/run.developer` | Deploy Cloud Run services |
 | `roles/artifactregistry.writer` | Push Docker images |
-| `roles/iam.serviceAccountUser` on `analytics-webapp@PROJECT.iam.gserviceaccount.com` | Deploy using the runtime SA (`iam.serviceaccounts.actAs`) |
+| `roles/iam.serviceAccountUser` on `user-journey@PROJECT.iam.gserviceaccount.com` | Deploy using the runtime SA (`iam.serviceaccounts.actAs`) |
 
 **Already verified in this project:**
 
 - Artifact Registry repo `webapp` exists (`us-central1`)
-- Runtime SA `analytics-webapp@vdc200006-mena-eng-dev.iam.gserviceaccount.com` exists
+- Runtime SA `user-journey@vdc200006-mena-eng-dev.iam.gserviceaccount.com` exists
 - `npm run build` succeeds locally (Dockerfile will build when Cloud Build runs)
 
 **Errors seen when permissions are missing:**
 
 ```
 forbidden from accessing the bucket [PROJECT_cloudbuild]
-Permission 'iam.serviceaccounts.actAs' denied on service account analytics-webapp@...
+Permission 'iam.serviceaccounts.actAs' denied on service account user-journey@...
 Permission denied to enable service [run.googleapis.com]
 ```
 

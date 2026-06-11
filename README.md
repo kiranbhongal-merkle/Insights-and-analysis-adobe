@@ -50,7 +50,7 @@ Or on Windows:
 .\deploy.ps1
 ```
 
-The runtime service account `analytics-webapp@PROJECT.iam.gserviceaccount.com` needs `roles/bigquery.dataViewer` and `roles/bigquery.jobUser` on the project/dataset.
+The runtime service account `user-journey@PROJECT.iam.gserviceaccount.com` needs `roles/bigquery.dataViewer` and `roles/bigquery.jobUser` on the project/dataset.
 
 ---
 
