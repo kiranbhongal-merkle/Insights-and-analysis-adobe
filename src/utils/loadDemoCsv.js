@@ -158,6 +158,20 @@ function toConvRows(map, { limit = 14, sumExtra = true } = {}) {
   ];
 }
 
+/** Empty dashboard shell — used when BigQuery returns no rows (never show hardcoded demo). */
+export const EMPTY_DASHBOARD_DATA = {
+  __overviewSummary: { visits: 0, conv: 0, rate: 0, rev: 0, aov: 0, sess: 0 },
+  kpi: [],
+  funnel: [],
+  channel: [],
+  lasttouch: [],
+  usertype: [],
+  country: [],
+  browser: [],
+  device: [],
+  exits: [],
+};
+
 /**
  * Build all dashboard datasets from raw rows, filtered by date range.
  * Returns the object injected onto window.__DEMO_DATA__.
@@ -171,7 +185,7 @@ export function buildDemoDataFromRows(rawRows, { dateFrom, dateTo } = {}) {
     return true;
   });
 
-  if (!rows.length) return {};
+  if (!rows.length) return { ...EMPTY_DASHBOARD_DATA };
 
   // ── Site-wide overview totals ──────────────────────────────
   let tVisits = 0, tConv = 0, tRev = 0, tSessMin = 0, tSessCnt = 0;

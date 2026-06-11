@@ -146,9 +146,14 @@ function getInjectedDemoData() {
 export const SAMPLE_DATA = new Proxy(DEFAULT_SAMPLE_DATA, {
   get(target, prop) {
     const injected = getInjectedDemoData();
+    const bigQueryOnly = typeof window !== 'undefined' && window.__DATA_SOURCE__ === 'bigquery';
+
     if (injected && Object.prototype.hasOwnProperty.call(injected, prop) && injected[prop] !== undefined) {
       return injected[prop];
     }
+    if (bigQueryOnly && Array.isArray(target[prop])) return [];
+    if (bigQueryOnly) return undefined;
+
     return target[prop];
   },
 });
@@ -159,10 +164,15 @@ export const OVERVIEW_SUMMARY = {
   rev: 780000000, aov: 9644, sess: 2.56,
 };
 
+const EMPTY_OVERVIEW_SUMMARY = { visits: 0, conv: 0, rate: 0, rev: 0, aov: 0, sess: 0 };
+
 /** Active overview summary (respects date filter when applied). */
 export function getOverviewSummary() {
   if (typeof window !== 'undefined' && window.__OVERVIEW_SUMMARY__) {
     return window.__OVERVIEW_SUMMARY__;
+  }
+  if (typeof window !== 'undefined' && window.__DATA_SOURCE__ === 'bigquery') {
+    return EMPTY_OVERVIEW_SUMMARY;
   }
   return OVERVIEW_SUMMARY;
 }

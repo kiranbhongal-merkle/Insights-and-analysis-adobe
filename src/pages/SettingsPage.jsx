@@ -65,11 +65,13 @@ export default function SettingsPage() {
             <div>
               <div className="setting-label">Connection status</div>
               <div className="setting-desc">
-                {connected ? 'Connected to BigQuery with your access token.' : 'Using local demo data.'}
+                {connected
+                  ? 'Dashboard data is loaded from BigQuery (server-side on Cloud Run).'
+                  : 'Could not reach BigQuery. Check Cloud Run service and table permissions.'}
               </div>
             </div>
             <span className={`tag ${connected ? 'tag-green' : 'tag-amber'}`}>
-              {connected ? '● Connected' : '○ Demo mode'}
+              {connected ? '● Connected' : '○ Not connected'}
             </span>
           </div>
           <div style={{ marginTop: 16 }}>

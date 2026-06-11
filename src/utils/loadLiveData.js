@@ -6,8 +6,24 @@
 // pipeline so live and demo data render identically.
 // ============================================================
 
-import { buildDemoDataFromRows } from './loadDemoCsv';
-import { OVERVIEW_SUMMARY } from './helpers';
+import { buildDemoDataFromRows, EMPTY_DASHBOARD_DATA } from './loadDemoCsv';
+
+/** Initialise window data shell before first render (prevents hardcoded demo flash). */
+export function initBigQueryOnlyMode() {
+  if (typeof window === 'undefined') return;
+  window.__DATA_SOURCE__ = 'bigquery';
+  window.__DEMO_CSV_RAW__ = [];
+  window.__DEMO_DATA__ = { ...EMPTY_DASHBOARD_DATA };
+  window.__OVERVIEW_SUMMARY__ = EMPTY_DASHBOARD_DATA.__overviewSummary;
+}
+
+function clearLiveData() {
+  if (typeof window === 'undefined') return;
+  window.__DATA_SOURCE__ = 'bigquery';
+  window.__DEMO_CSV_RAW__ = [];
+  window.__DEMO_DATA__ = { ...EMPTY_DASHBOARD_DATA };
+  window.__OVERVIEW_SUMMARY__ = EMPTY_DASHBOARD_DATA.__overviewSummary;
+}
 
 /**
  * Load live BigQuery data for a date range and inject it onto window.
@@ -20,19 +36,28 @@ export async function loadLiveData({ from, to } = {}) {
   if (from) params.set('from', from);
   if (to) params.set('to', to);
 
-  const res = await fetch(`/api/dashboard?${params.toString()}`, { cache: 'no-store' });
+  let res;
+  try {
+    res = await fetch(`/api/dashboard?${params.toString()}`, { cache: 'no-store' });
+  } catch {
+    clearLiveData();
+    return { loaded: false, reason: 'network-error' };
+  }
+
   if (!res.ok) {
+    clearLiveData();
     return { loaded: false, reason: `request-failed:${res.status}` };
   }
 
   const payload = await res.json();
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
 
+  window.__DATA_SOURCE__ = 'bigquery';
   window.__DEMO_CSV_RAW__ = rows;
 
   const built = buildDemoDataFromRows(rows, { dateFrom: from, dateTo: to });
   window.__DEMO_DATA__ = built;
-  window.__OVERVIEW_SUMMARY__ = built.__overviewSummary ?? OVERVIEW_SUMMARY;
+  window.__OVERVIEW_SUMMARY__ = built.__overviewSummary ?? EMPTY_DASHBOARD_DATA.__overviewSummary;
 
-  return { loaded: true, count: rows.length };
+  return { loaded: true, count: rows.length, empty: rows.length === 0 };
 }

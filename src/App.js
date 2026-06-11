@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, TrendingDown, DoorOpen, Monitor,
@@ -17,8 +17,6 @@ import BrowserPage       from './pages/BrowserPage';
 import LastTouchPage     from './pages/LastTouchPage';
 import CustomReportPage  from './pages/CustomReportPage';
 import GlossaryPage      from './pages/GlossaryPage';
-import { loadDemoCsvIntoWindow } from './utils/loadDemoCsv';
-import { applyDemoDateRange } from './utils/applyDateRange';
 import { loadLiveData } from './utils/loadLiveData';
 import { exportPptx } from './utils/exportPptx';
 
@@ -76,7 +74,7 @@ function Sidebar({ collapsed, setCollapsed }) {
   );
 }
 
-function Topbar({ dateRange, setDateRange, connected, dark, setDark }) {
+function Topbar({ dateRange, setDateRange, connected, dataLoading, dark, setDark }) {
   const location = useLocation();
   const current = NAV_ITEMS.find(n => n.path === location.pathname);
   const [exporting, setExporting] = useState(false);
@@ -99,9 +97,9 @@ function Topbar({ dateRange, setDateRange, connected, dark, setDark }) {
     <header className="topbar">
       <div className="topbar-left">
         <h1 className="page-title">{current?.label || 'Analytics'}</h1>
-        <div className={`conn-badge ${connected ? 'live' : 'demo'}`}>
-          {connected ? <Wifi size={11} /> : <WifiOff size={11} />}
-          {connected ? 'BigQuery live' : 'Demo data'}
+        <div className={`conn-badge ${dataLoading ? 'loading' : connected ? 'live' : 'error'}`}>
+          {dataLoading ? <Loader2 size={11} className="spin" /> : connected ? <Wifi size={11} /> : <WifiOff size={11} />}
+          {dataLoading ? 'Loading…' : connected ? 'BigQuery live' : 'Not connected'}
         </div>
       </div>
       <div className="topbar-right">
@@ -137,47 +135,45 @@ export default function App() {
   const [connected, setConnected] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [dataError, setDataError] = useState(null);
-  const demoCsvLoaded = useRef(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     from: '2026-01-01',
     to:   '2026-04-30',
   });
 
-  // Try live BigQuery first (Cloud Run); fall back to bundled demo CSV locally.
+  // Load dashboard data exclusively from BigQuery (no demo CSV fallback).
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      setDataLoading(true);
       setDataError(null);
-      const live = await loadLiveData({ from: dateRange.from, to: dateRange.to });
-      if (cancelled) return;
 
-      if (live.loaded) {
-        setConnected(true);
-        setDataVersion(v => v + 1);
-        return;
-      }
-
-      if (!demoCsvLoaded.current) {
-        const demo = await loadDemoCsvIntoWindow({
-          url: `${process.env.PUBLIC_URL || ''}/demo_data/Test_new.csv`,
-        });
+      try {
+        const live = await loadLiveData({ from: dateRange.from, to: dateRange.to });
         if (cancelled) return;
-        if (demo.loaded) demoCsvLoaded.current = true;
-      }
 
-      applyDemoDateRange(dateRange.from, dateRange.to);
-      setConnected(false);
-      if (process.env.NODE_ENV === 'production') {
-        setDataError('Could not load live data from BigQuery.');
+        if (live.loaded) {
+          setConnected(true);
+          if (live.empty) {
+            setDataError('No data in BigQuery for the selected date range.');
+          }
+          setDataVersion(v => v + 1);
+          return;
+        }
+
+        setConnected(false);
+        setDataError('Could not load data from BigQuery. Check the service connection and table permissions.');
+        setDataVersion(v => v + 1);
+      } catch {
+        if (cancelled) return;
+        setConnected(false);
+        setDataError('Could not load data from BigQuery. Check the service connection and table permissions.');
+        setDataVersion(v => v + 1);
+      } finally {
+        if (!cancelled) setDataLoading(false);
       }
-      setDataVersion(v => v + 1);
-    })().catch(() => {
-      if (cancelled) return;
-      applyDemoDateRange(dateRange.from, dateRange.to);
-      setConnected(false);
-      setDataVersion(v => v + 1);
-    });
+    })();
 
     return () => { cancelled = true; };
   }, [dateRange.from, dateRange.to]);
@@ -192,10 +188,22 @@ export default function App() {
               dateRange={dateRange}
               setDateRange={setDateRange}
               connected={connected}
+              dataLoading={dataLoading}
               dark={dark}
               setDark={setDark}
             />
+            {dataError && (
+              <div className={`data-error-banner ${connected ? 'notice' : ''}`} role="alert">
+                {dataError}
+              </div>
+            )}
             <main className="page-content">
+              {dataLoading ? (
+                <div className="data-loading-state">
+                  <Loader2 size={28} className="spin" />
+                  <p>Loading data from BigQuery…</p>
+                </div>
+              ) : (
               <Routes key={dataVersion}>
                 <Route path="/"           element={<OverviewPage />} />
                 <Route path="/funnel"     element={<FunnelPage />} />
@@ -208,6 +216,7 @@ export default function App() {
                 <Route path="/custom"     element={<CustomReportPage />} />
                 <Route path="/glossary"   element={<GlossaryPage />} />
               </Routes>
+              )}
             </main>
           </div>
         </div>
