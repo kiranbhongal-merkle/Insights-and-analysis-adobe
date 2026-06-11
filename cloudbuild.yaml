@@ -12,6 +12,9 @@ substitutions:
   _SERVICE: analytics-webapp
   _BQ_DATASET: 'RHQ_INSIGHTS'
   _BQ_TABLE: 'User_Journey_Analysis_Adobe'
+  # Cap rows per request — Cloud Run HTTP responses are limited to ~32 MiB.
+  _BQ_ROW_LIMIT: '10000'
+  _MEMORY: '2Gi'
   _RUNTIME_SA: 'user-journey-analysis-adobe@${PROJECT_ID}.iam.gserviceaccount.com'
   # internal = VPN/VPC only (recommended). Use "all" for a public URL.
   _INGRESS: all
@@ -47,7 +50,8 @@ steps:
       - '--service-account=${_RUNTIME_SA}'
       - '--ingress=${_INGRESS}'
       - '--allow-unauthenticated'
-      - '--set-env-vars=BQ_PROJECT=${PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE},BQ_LOCATION=US'
+      - '--memory=${_MEMORY}'
+      - '--set-env-vars=BQ_PROJECT=${PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE},BQ_LOCATION=US,BQ_ROW_LIMIT=${_BQ_ROW_LIMIT}'
       - '--revision-suffix=${SHORT_SHA}'
 
 images:

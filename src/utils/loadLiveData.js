@@ -44,12 +44,21 @@ export async function loadLiveData({ from, to } = {}) {
     return { loaded: false, reason: 'network-error' };
   }
 
-  if (!res.ok) {
-    clearLiveData();
-    return { loaded: false, reason: `request-failed:${res.status}` };
+  let payload;
+  try {
+    payload = await res.json();
+  } catch {
+    payload = {};
   }
 
-  const payload = await res.json();
+  if (!res.ok) {
+    clearLiveData();
+    return {
+      loaded: false,
+      reason: `request-failed:${res.status}`,
+      message: payload.message || payload.error || null,
+    };
+  }
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
 
   window.__DATA_SOURCE__ = 'bigquery';
@@ -59,5 +68,11 @@ export async function loadLiveData({ from, to } = {}) {
   window.__DEMO_DATA__ = built;
   window.__OVERVIEW_SUMMARY__ = built.__overviewSummary ?? EMPTY_DASHBOARD_DATA.__overviewSummary;
 
-  return { loaded: true, count: rows.length, empty: rows.length === 0 };
+  return {
+    loaded: true,
+    count: rows.length,
+    empty: rows.length === 0,
+    truncated: Boolean(payload.truncated),
+    rowLimit: payload.source?.ROW_LIMIT,
+  };
 }

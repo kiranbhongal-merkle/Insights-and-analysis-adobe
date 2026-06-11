@@ -52,15 +52,35 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:user-journey-analysis-adobe@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.jobUser"
+
+# If the table uses dataset-level ACLs, also grant on the dataset:
+gcloud bigquery datasets add-iam-policy-binding RHQ_INSIGHTS \
+  --project=$PROJECT_ID \
+  --member="serviceAccount:user-journey-analysis-adobe@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataViewer"
+```
+
+### Cloud Run memory & row limit
+
+The app returns row-level BigQuery data as JSON. Cloud Run caps HTTP responses
+at **~32 MiB**, so `cloudbuild.yaml` deploys with **2 GiB memory** and
+`BQ_ROW_LIMIT=10000`. If you see `Response size was too large` in logs, lower
+the limit or narrow the date range in the UI.
+
+To tune without a full redeploy:
+
+```bash
+gcloud run services update analytics-webapp --region $REGION \
+  --memory=2Gi \
+  --set-env-vars="BQ_PROJECT=$PROJECT_ID,BQ_DATASET=RHQ_INSIGHTS,BQ_TABLE=User_Journey_Analysis_Adobe,BQ_LOCATION=US,BQ_ROW_LIMIT=10000"
 ```
 
 ---
 
-## 2. Deploy (internal / VPN-only — recommended)
+## 2. Deploy
 
-`cloudbuild.yaml` defaults to `--ingress=internal`, so the service is **not
-reachable from the public internet**. Colleagues access it only when connected
-to your corporate VPN or VPC.
+`cloudbuild.yaml` defaults to `--ingress=all` for a public Cloud Run URL.
+Set `_INGRESS: internal` in the file if your policy requires VPN/VPC-only access.
 
 ```bash
 gcloud builds submit --config cloudbuild.yaml

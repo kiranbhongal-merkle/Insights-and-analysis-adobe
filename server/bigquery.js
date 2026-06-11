@@ -20,7 +20,7 @@ const PROJECT = process.env.BQ_PROJECT || 'vdc200006-mena-eng-dev';
 const DATASET = process.env.BQ_DATASET || 'RHQ_INSIGHTS';
 const TABLE = process.env.BQ_TABLE || 'User_Journey_Analysis_Adobe';
 const LOCATION = process.env.BQ_LOCATION || 'US';
-const ROW_LIMIT = Number(process.env.BQ_ROW_LIMIT || 200000);
+const ROW_LIMIT = Number(process.env.BQ_ROW_LIMIT || 10000);
 
 const bq = new BigQuery({ projectId: PROJECT });
 
@@ -86,5 +86,5 @@ async function getRows({ from, to } = {}) {
 
 module.exports = {
   getRows,
-  config: { PROJECT, DATASET, TABLE, LOCATION },
+  config: { PROJECT, DATASET, TABLE, LOCATION, ROW_LIMIT },
 };

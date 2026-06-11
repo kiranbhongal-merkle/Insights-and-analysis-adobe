@@ -21,11 +21,13 @@ app.get('/api/dashboard', async (req, res) => {
   try {
     const { from, to } = req.query;
     const rows = await getRows({ from, to });
-    res.json({ rows, source: config });
+    const truncated = rows.length >= config.ROW_LIMIT;
+    res.json({ rows, source: config, rowCount: rows.length, truncated });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('BigQuery query failed:', err);
-    res.status(500).json({ error: 'Query failed' });
+    const message = err?.message || 'Query failed';
+    res.status(500).json({ error: 'Query failed', message });
   }
 });
 

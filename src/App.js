@@ -138,7 +138,7 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     from: '2026-01-01',
-    to:   '2026-04-30',
+    to:   '2026-01-31',
   });
 
   // Load dashboard data exclusively from BigQuery (no demo CSV fallback).
@@ -157,13 +157,22 @@ export default function App() {
           setConnected(true);
           if (live.empty) {
             setDataError('No data in BigQuery for the selected date range.');
+          } else if (live.truncated) {
+            const limit = live.rowLimit ?? live.count;
+            setDataError(
+              `Showing the first ${live.count.toLocaleString()} rows (limit ${Number(limit).toLocaleString()}). Narrow the date range for complete data.`
+            );
           }
           setDataVersion(v => v + 1);
           return;
         }
 
         setConnected(false);
-        setDataError('Could not load data from BigQuery. Check the service connection and table permissions.');
+        setDataError(
+          live.message
+            ? `BigQuery error: ${live.message}`
+            : 'Could not load data from BigQuery. Check the service connection and table permissions.'
+        );
         setDataVersion(v => v + 1);
       } catch {
         if (cancelled) return;
