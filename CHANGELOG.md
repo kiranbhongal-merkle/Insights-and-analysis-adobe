@@ -10,9 +10,11 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Changed
-- Cloud Run deploy: **2 GiB memory**, `BQ_ROW_LIMIT=10000` (avoids OOM and 32 MiB response cap).
-- Default date range narrowed to one month (2026-01-01 → 2026-01-31).
-- API returns `truncated` flag when the row cap is hit; UI shows a notice to narrow dates.
+- **Server-side BigQuery aggregation** — `/api/dashboard` returns pre-built chart
+  datasets (KPI, funnel, dimensions) instead of row-level rows; supports full
+  quarters without row limits or 32 MiB response issues.
+- Cloud Run deploy: **2 GiB memory** for parallel aggregation queries.
+- Default date range: Q1 2026 (2026-01-01 → 2026-03-31).
 - Runtime and Cloud Build trigger service account set to `user-journey-analysis-adobe@vdc200006-mena-eng-dev.iam.gserviceaccount.com`.
 
 ### Added

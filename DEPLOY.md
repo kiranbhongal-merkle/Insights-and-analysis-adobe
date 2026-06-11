@@ -60,20 +60,12 @@ gcloud bigquery datasets add-iam-policy-binding RHQ_INSIGHTS \
   --role="roles/bigquery.dataViewer"
 ```
 
-### Cloud Run memory & row limit
+### Cloud Run memory
 
-The app returns row-level BigQuery data as JSON. Cloud Run caps HTTP responses
-at **~32 MiB**, so `cloudbuild.yaml` deploys with **2 GiB memory** and
-`BQ_ROW_LIMIT=10000`. If you see `Response size was too large` in logs, lower
-the limit or narrow the date range in the UI.
-
-To tune without a full redeploy:
-
-```bash
-gcloud run services update analytics-webapp --region $REGION \
-  --memory=2Gi \
-  --set-env-vars="BQ_PROJECT=$PROJECT_ID,BQ_DATASET=RHQ_INSIGHTS,BQ_TABLE=User_Journey_Analysis_Adobe,BQ_LOCATION=US,BQ_ROW_LIMIT=10000"
-```
+`/api/dashboard` runs **aggregated BigQuery SQL** on the server (KPI, funnel,
+channel, country, etc.) and returns a compact JSON payload — not row-level
+exports. `cloudbuild.yaml` deploys with **2 GiB memory** for parallel BQ jobs.
+Full quarters (e.g. Jan–Mar) are supported without row caps.
 
 ---
 

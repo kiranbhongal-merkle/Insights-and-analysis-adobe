@@ -1,12 +1,11 @@
 // ============================================================
 // Live data loader
 // ------------------------------------------------------------
-// Fetches row-level rows from /api/dashboard (same origin on
-// Cloud Run) and feeds them through the demo CSV aggregation
-// pipeline so live and demo data render identically.
+// Fetches pre-aggregated dashboard data from /api/dashboard
+// (BigQuery SQL on the server) and injects it for the UI.
 // ============================================================
 
-import { buildDemoDataFromRows, EMPTY_DASHBOARD_DATA } from './loadDemoCsv';
+import { EMPTY_DASHBOARD_DATA } from './loadDemoCsv';
 
 /** Initialise window data shell before first render (prevents hardcoded demo flash). */
 export function initBigQueryOnlyMode() {
@@ -59,20 +58,21 @@ export async function loadLiveData({ from, to } = {}) {
       message: payload.message || payload.error || null,
     };
   }
-  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+
+  const dashboard = payload.dashboard && typeof payload.dashboard === 'object'
+    ? payload.dashboard
+    : { ...EMPTY_DASHBOARD_DATA };
 
   window.__DATA_SOURCE__ = 'bigquery';
-  window.__DEMO_CSV_RAW__ = rows;
+  window.__DEMO_CSV_RAW__ = [];
+  window.__DEMO_DATA__ = dashboard;
+  window.__OVERVIEW_SUMMARY__ = dashboard.__overviewSummary ?? EMPTY_DASHBOARD_DATA.__overviewSummary;
 
-  const built = buildDemoDataFromRows(rows, { dateFrom: from, dateTo: to });
-  window.__DEMO_DATA__ = built;
-  window.__OVERVIEW_SUMMARY__ = built.__overviewSummary ?? EMPTY_DASHBOARD_DATA.__overviewSummary;
+  const visits = dashboard.__overviewSummary?.visits ?? 0;
 
   return {
     loaded: true,
-    count: rows.length,
-    empty: rows.length === 0,
-    truncated: Boolean(payload.truncated),
-    rowLimit: payload.source?.ROW_LIMIT,
+    empty: Boolean(payload.empty) || visits === 0,
+    aggregated: Boolean(payload.aggregated),
   };
 }

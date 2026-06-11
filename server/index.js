@@ -9,7 +9,7 @@
 const path = require('path');
 const express = require('express');
 
-const { getRows, config } = require('./bigquery');
+const { getAggregatedDashboard, config } = require('./aggregateDashboard');
 
 const app = express();
 app.disable('x-powered-by');
@@ -20,9 +20,9 @@ app.get('/healthz', (_req, res) => res.json({ ok: true }));
 app.get('/api/dashboard', async (req, res) => {
   try {
     const { from, to } = req.query;
-    const rows = await getRows({ from, to });
-    const truncated = rows.length >= config.ROW_LIMIT;
-    res.json({ rows, source: config, rowCount: rows.length, truncated });
+    const dashboard = await getAggregatedDashboard({ from, to });
+    const empty = !dashboard.kpi?.length && !dashboard.__overviewSummary?.visits;
+    res.json({ dashboard, source: config, aggregated: true, empty });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('BigQuery query failed:', err);
