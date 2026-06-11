@@ -39,18 +39,18 @@ gcloud artifacts repositories create webapp \
   --repository-format=docker --location=$REGION
 ```
 
-Create a runtime service account and grant BigQuery read (skip if using the existing `user-journey` SA):
+Grant BigQuery read to the runtime / Cloud Build trigger service account:
 
 ```bash
-# Existing runtime SA for this project:
-# user-journey@vdc200006-mena-eng-dev.iam.gserviceaccount.com
+# Service account (runtime + Cloud Build trigger):
+# user-journey-analysis-adobe@vdc200006-mena-eng-dev.iam.gserviceaccount.com
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:user-journey@$PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:user-journey-analysis-adobe@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataViewer"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:user-journey@$PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:user-journey-analysis-adobe@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.jobUser"
 ```
 
@@ -177,19 +177,20 @@ roles on project `vdc200006-mena-eng-dev`:
 | `roles/storage.objectAdmin` on bucket `{PROJECT_ID}_cloudbuild` | Upload build source |
 | `roles/run.admin` or `roles/run.developer` | Deploy Cloud Run services |
 | `roles/artifactregistry.writer` | Push Docker images |
-| `roles/iam.serviceAccountUser` on `user-journey@PROJECT.iam.gserviceaccount.com` | Deploy using the runtime SA (`iam.serviceaccounts.actAs`) |
+| `roles/iam.serviceAccountUser` on `user-journey-analysis-adobe@PROJECT.iam.gserviceaccount.com` | Deploy using the runtime SA (`iam.serviceaccounts.actAs`) |
+| `roles/logging.logWriter` on `user-journey-analysis-adobe@...` | Required when trigger runs as this SA (`logging: CLOUD_LOGGING_ONLY`) |
 
 **Already verified in this project:**
 
 - Artifact Registry repo `webapp` exists (`us-central1`)
-- Runtime SA `user-journey@vdc200006-mena-eng-dev.iam.gserviceaccount.com` exists
+- Service account `user-journey-analysis-adobe@vdc200006-mena-eng-dev.iam.gserviceaccount.com` (runtime + trigger)
 - `npm run build` succeeds locally (Dockerfile will build when Cloud Build runs)
 
 **Errors seen when permissions are missing:**
 
 ```
 forbidden from accessing the bucket [PROJECT_cloudbuild]
-Permission 'iam.serviceaccounts.actAs' denied on service account user-journey@...
+Permission 'iam.serviceaccounts.actAs' denied on service account user-journey-analysis-adobe@...
 Permission denied to enable service [run.googleapis.com]
 ```
 

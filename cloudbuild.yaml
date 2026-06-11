@@ -12,7 +12,7 @@ substitutions:
   _SERVICE: analytics-webapp
   _BQ_DATASET: 'RHQ_INSIGHTS'
   _BQ_TABLE: 'User_Journey_Analysis_Adobe'
-  _RUNTIME_SA: 'user-journey@${PROJECT_ID}.iam.gserviceaccount.com'
+  _RUNTIME_SA: 'user-journey-analysis-adobe@${PROJECT_ID}.iam.gserviceaccount.com'
   # internal = VPN/VPC only (recommended). Use "all" for a public URL.
   _INGRESS: internal
 

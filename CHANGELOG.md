@@ -9,6 +9,9 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+- Runtime and Cloud Build trigger service account set to `user-journey-analysis-adobe@vdc200006-mena-eng-dev.iam.gserviceaccount.com`.
+
 ### Added
 - **GCP hosting + live BigQuery data.** Express server (`server/`) serves the
   React build and exposes `GET /api/dashboard` with parameterized BigQuery

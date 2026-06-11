@@ -6,7 +6,7 @@ import { Save, RefreshCw, ExternalLink, Copy } from 'lucide-react';
 const DEPLOY_STEPS = [
   { n: '01', title: 'Set GCP project', cmd: 'gcloud config set project vdc200006-mena-eng-dev', desc: 'Target project for deploy' },
   { n: '02', title: 'Enable APIs', cmd: 'gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com bigquery.googleapis.com', desc: 'One-time per project (admin may need to do this)' },
-  { n: '03', title: 'Grant BQ to runtime SA', cmd: 'gcloud projects add-iam-policy-binding vdc200006-mena-eng-dev --member="serviceAccount:user-journey@vdc200006-mena-eng-dev.iam.gserviceaccount.com" --role="roles/bigquery.dataViewer"', desc: 'Also add roles/bigquery.jobUser' },
+  { n: '03', title: 'Grant BQ to runtime SA', cmd: 'gcloud projects add-iam-policy-binding vdc200006-mena-eng-dev --member="serviceAccount:user-journey-analysis-adobe@vdc200006-mena-eng-dev.iam.gserviceaccount.com" --role="roles/bigquery.dataViewer"', desc: 'Also add roles/bigquery.jobUser' },
   { n: '04', title: 'Deploy to Cloud Run', cmd: 'gcloud builds submit --config cloudbuild.yaml', desc: 'Builds Docker image and deploys analytics-webapp' },
   { n: '05', title: 'Get service URL', cmd: 'gcloud run services describe analytics-webapp --region us-central1 --format="value(status.url)"', desc: 'Internal ingress — use VPN or gcloud run services proxy' },
 ];
@@ -195,7 +195,7 @@ END AS hit_revenue_usd`}
         <div style={{ marginTop: 16, padding: 14, background: '#dbeafe', borderRadius: 8, fontSize: 12, color: '#1e40af' }}>
           <strong>On Cloud Run, OAuth tokens are not needed.</strong> The runtime service account
           {' '}
-          <code>user-journey@vdc200006-mena-eng-dev.iam.gserviceaccount.com</code>
+          <code>user-journey-analysis-adobe@vdc200006-mena-eng-dev.iam.gserviceaccount.com</code>
           {' '}
           queries BigQuery server-side. Grant it <code>roles/bigquery.dataViewer</code> and <code>roles/bigquery.jobUser</code>.
         </div>
