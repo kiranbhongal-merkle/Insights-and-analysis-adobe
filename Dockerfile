@@ -6,7 +6,7 @@
 FROM node:18-slim AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
@@ -14,7 +14,7 @@ FROM node:18-slim
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 COPY server ./server
 COPY --from=build /app/build ./build
 EXPOSE 8080
