@@ -430,7 +430,9 @@ export function buildSegmentDrilldown(sourceId, segmentName, targetDimId, metric
   if (!sourceRow || !config) return [];
 
   // Seed the walk with the clicked page segment's full metric bundle.
-  const rootBundle = deriveBundle(rowBundle(sourceRow));
+  const base = rowBundle(sourceRow);
+  const rootBundle = deriveBundle(base);
+  rootBundle.exits = base.exits;
   rootBundle.primary = metricPrimary(metricKey, rootBundle, config, sourceRow);
   if (rootBundle.primary == null || Number.isNaN(rootBundle.primary)) return [];
 
@@ -532,18 +534,25 @@ function r2(n) {
 }
 
 function rowBundle(row) {
+  const isExitRow = row.exits != null && row.pv != null;
   return {
-    visits: Number(row.visits ?? row.visitors ?? 0) || 0,
+    visits: Number(row.visits ?? row.visitors ?? (isExitRow ? row.pv : 0) ?? 0) || 0,
     conv: Number(row.conv ?? row.conversions ?? row.purch ?? 0) || 0,
     rev: Number(row.rev ?? row.revenue ?? 0) || 0,
+    exits: Number(row.exits ?? 0) || 0,
+    exitRate: row.rate != null ? Number(row.rate) : null,
     sess: row.sess ?? row.avg_session ?? null,
+    abandon: row.abandon != null ? Number(row.abandon) : null,
   };
 }
 
 function deriveBundle(b) {
+  const rate = b.exitRate != null
+    ? Number(b.exitRate)
+    : (b.visits > 0 ? r2((b.conv / b.visits) * 100) : null);
   return {
     ...b,
-    rate: b.visits > 0 ? r2((b.conv / b.visits) * 100) : null,
+    rate,
     aov: b.conv > 0 ? Math.round(b.rev / b.conv) : null,
   };
 }
@@ -552,14 +561,17 @@ function deriveBundle(b) {
 function metricPrimary(kpiKey, bundle, config, rawRow) {
   switch (kpiKey) {
     case 'rate':
+      return rawRow?.rate ?? bundle.rate;
     case 'exit_rate':
-      return bundle.rate;
+      return rawRow?.rate ?? rawRow?.exitRate ?? bundle.rate;
+    case 'exits':
+      return rawRow?.exits ?? bundle.exits ?? 0;
     case 'aov':
       return bundle.aov;
     case 'sess':
       return bundle.sess;
     case 'abandon':
-      return bundle.visits > 0 ? r2(100 - (bundle.conv / bundle.visits) * 100) : (rawRow?.abandon ?? null);
+      return rawRow?.abandon ?? (bundle.visits > 0 ? r2(100 - (bundle.conv / bundle.visits) * 100) : null);
     case 'visits':
       return bundle.visits;
     case 'conv':
@@ -601,6 +613,7 @@ function distributeBundle(kpiKey, dimensionId, parent, path, ctx, config) {
   const tV = wSum(x => x.b.visits * x.aff);
   const tC = wSum(x => x.b.conv * x.aff);
   const tR = wSum(x => x.b.rev * x.aff);
+  const tE = wSum(x => (x.b.exits ?? 0) * x.aff);
   const tAff = wSum(x => x.aff) || items.length || 1;
 
   let sessScale = 1;
@@ -616,10 +629,12 @@ function distributeBundle(kpiKey, dimensionId, parent, path, ctx, config) {
     const shareV = tV > 0 ? (x.b.visits * x.aff) / tV : x.aff / tAff;
     const shareC = tC > 0 ? (x.b.conv * x.aff) / tC : shareV;
     const shareR = tR > 0 ? (x.b.rev * x.aff) / tR : shareV;
+    const shareE = tE > 0 ? ((x.b.exits ?? 0) * x.aff) / tE : shareV;
     const bundle = deriveBundle({
       visits: Math.round(parent.visits * shareV),
       conv: Math.round(parent.conv * shareC),
       rev: Math.round(parent.rev * shareR),
+      exits: Math.round((parent.exits ?? 0) * shareE),
       sess: parent.sess != null ? r2((x.b.sess ?? parent.sess) * sessScale) : x.b.sess,
     });
 
@@ -630,6 +645,7 @@ function distributeBundle(kpiKey, dimensionId, parent, path, ctx, config) {
     else if (kpiKey === 'visits') bundle.primary = bundle.visits;
     else if (kpiKey === 'conv') bundle.primary = bundle.conv;
     else if (kpiKey === 'rev') bundle.primary = bundle.rev;
+    else if (kpiKey === 'exits') bundle.primary = Math.round((parent.exits ?? parent.primary ?? 0) * shareE);
     else bundle.primary = parent.primary != null ? Math.round(parent.primary * shareV) : null;
 
     return { label: x.label, row: x.row, shareV, bundle };
@@ -774,6 +790,8 @@ export function getDrillPrimaryTotal(rows, metricKey) {
       return t.sess;
     case 'abandon':
       return t.visits > 0 ? parseFloat((100 - (t.conv / t.visits) * 100).toFixed(2)) : null;
+    case 'exits':
+      return t.primarySum;
     default:
       return t.primarySum;
   }

@@ -19,6 +19,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 - **Docs.** `DEPLOY.md` (setup, deploy, rollback), `.env.example`.
 
 ### Changed
+- **BigQuery table aligned** to `vdc200006-mena-eng-dev.RHQ_INSIGHTS.User_Journey_Analysis_Adobe` across server, client config, Cloud Build env vars, and docs.
 - **Removed Firebase Authentication.** The app has no login screen; access is
   restricted at the Cloud Run ingress level (internal/VPN by default).
 - Live rows and the demo CSV share the same aggregation pipeline

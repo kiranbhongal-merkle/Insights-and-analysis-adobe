@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { SAMPLE_DATA, fmtNum } from '../utils/helpers';
-import { HBarChart } from '../components/Charts';
+import ExitPageBarList from '../components/ExitPageBarList';
 import InfoHint from '../components/InfoHint';
 import InsightsPanel from '../components/InsightsPanel';
 import ClickableMetricCard from '../components/ClickableMetricCard';
@@ -26,6 +26,7 @@ const EXIT_KPIS = [
 
 export default function ExitsPage() {
   const data = SAMPLE_DATA.exits;
+  const byExits = [...data].sort((a, b) => b.exits - a.exits);
   const sorted = [...data].sort((a, b) => b.rate - a.rate);
   const summary = {
     exits: data.reduce((s, r) => s + r.exits, 0),
@@ -74,14 +75,15 @@ export default function ExitsPage() {
             <p><strong>Exits</strong> = number of sessions whose last page was this one. Bar length = exit volume.</p>
             <p>High volume here means many journeys end on this page. <strong>Click a bar</strong> to see which channels and markets drive those exits.</p>
           </InfoHint>
-          <DownloadCsvButton filename="exits-total" columns={EXITS_CSV_COLUMNS} rows={data} />
+          <DownloadCsvButton filename="exits-total" columns={EXITS_CSV_COLUMNS} rows={byExits} />
         </div>
-        <HBarChart
-          data={data}
-          xKey="exits"
-          yKey="label"
-          formatX={fmtNum}
-          onBarClick={label => openDrill(label, 'exits')}
+        <ExitPageBarList
+          rows={byExits}
+          valueKey="exits"
+          valueColumnLabel="Exits"
+          formatValue={v => fmtNum(v)}
+          colorFn={() => '#3266ad'}
+          onRowClick={label => openDrill(label, 'exits')}
         />
       </div>
 
@@ -94,13 +96,15 @@ export default function ExitsPage() {
           </InfoHint>
           <DownloadCsvButton filename="exits-rate-by-page" columns={EXITS_CSV_COLUMNS} rows={sorted} />
         </div>
-        <HBarChart
-          data={sorted}
-          xKey="rate"
-          yKey="label"
-          formatX={v => v + '%'}
+        <ExitPageBarList
+          rows={sorted}
+          valueKey="rate"
+          valueColumnLabel="Exit rate"
+          formatValue={v => `${v}%`}
+          maxValue={100}
+          showThreshold60
           colorFn={d => (d.rate >= 60 ? '#dc2626' : d.rate >= 40 ? '#d97706' : '#3266ad')}
-          onBarClick={label => openDrill(label, 'exit_rate')}
+          onRowClick={label => openDrill(label, 'exit_rate')}
         />
       </div>
 
@@ -120,7 +124,7 @@ export default function ExitsPage() {
           <tbody>
             {sorted.map(r => (
               <tr key={r.label} className="data-table-row--clickable" onClick={() => openDrill(r.label, 'exit_rate')}>
-                <td>{r.label}</td>
+                <td className="exits-page-cell">{r.label}</td>
                 <td className="num">{fmtNum(r.exits)}</td>
                 <td className="num">{fmtNum(r.pv)}</td>
                 <td className="num">

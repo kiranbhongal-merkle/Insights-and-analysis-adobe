@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { SAMPLE_DATA, fmtNum, getOverviewSummary } from '../utils/helpers';
 import { SUMMARY_KPIS } from '../utils/analysisPageKpis';
-import { DonutChart, VBarChart } from '../components/Charts';
+import { DonutChart, VBarChart, spreadPercentDomain } from '../components/Charts';
 import InfoHint from '../components/InfoHint';
 import InsightsPanel from '../components/InsightsPanel';
 import ClickableMetricCard from '../components/ClickableMetricCard';
@@ -11,6 +11,8 @@ import { useAnalysisDrill } from '../hooks/useAnalysisDrill';
 import { buildDeviceInsights } from '../utils/insights';
 
 const SOURCE = 'device';
+
+const abandonFmt = v => `${parseFloat(v).toFixed(2)}%`;
 
 const DEVICE_CSV_COLUMNS = [
   { key: 'dim', header: 'Device' },
@@ -82,6 +84,8 @@ export default function DevicePage() {
             data={data}
             bars={[{ key: 'abandon', label: 'Abandonment %', color: '#e05050' }]}
             height={200}
+            yTickFormatter={abandonFmt}
+            yDomain={spreadPercentDomain(data, 'abandon')}
             onBarClick={dim => openDrill(dim, 'abandon')}
           />
         </div>
@@ -118,7 +122,7 @@ export default function DevicePage() {
                 <td className="num">{fmtNum(r.visits)}</td>
                 <td className="num">{r.purch.toLocaleString()}</td>
                 <td className="num">{r.rate}%</td>
-                <td className="num">{r.abandon}%</td>
+                <td className="num">{abandonFmt(r.abandon)}</td>
               </tr>
             ))}
           </tbody>

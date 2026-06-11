@@ -5,8 +5,11 @@
 export const BQ_CONFIG = {
   projectId: 'vdc200006-mena-eng-dev',
   dataset: 'RHQ_INSIGHTS',
-  table: 'User_Journey_Analysis',
+  table: 'User_Journey_Analysis_Adobe',
 };
+
+/** Fully qualified BigQuery table: project.dataset.table */
+export const BQ_TABLE_FQ = `\`${BQ_CONFIG.projectId}.${BQ_CONFIG.dataset}.${BQ_CONFIG.table}\``;
 
 export const FX_RATES = {
   MAD: { op: 'divide',   rate: 9.11,    label: 'Moroccan Dirham' },

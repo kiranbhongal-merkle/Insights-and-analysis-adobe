@@ -4,12 +4,11 @@ import { FX_RATES } from '../config/bigquery';
 import { Save, RefreshCw, ExternalLink, Copy } from 'lucide-react';
 
 const DEPLOY_STEPS = [
-  { n: '01', title: 'Build the app', cmd: 'npm run build', desc: 'Creates optimised static files in /build' },
-  { n: '02', title: 'Install gcloud CLI', cmd: 'curl https://sdk.cloud.google.com | bash', desc: 'Then: gcloud auth login' },
-  { n: '03', title: 'Create App Engine app', cmd: 'gcloud app create --project=PROJECT_ID', desc: 'One-time setup per project' },
-  { n: '04', title: 'Deploy to App Engine', cmd: 'gcloud app deploy', desc: 'Auto-scales, no server management' },
-  { n: '05', title: 'Enable BigQuery API', cmd: 'gcloud services enable bigquery.googleapis.com --project=PROJECT_ID', desc: 'Required for data access' },
-  { n: '06', title: 'Grant BQ access', cmd: 'gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:PROJECT@appspot.gserviceaccount.com" --role="roles/bigquery.dataViewer"', desc: 'Give App Engine SA read access to BigQuery' },
+  { n: '01', title: 'Set GCP project', cmd: 'gcloud config set project vdc200006-mena-eng-dev', desc: 'Target project for deploy' },
+  { n: '02', title: 'Enable APIs', cmd: 'gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com bigquery.googleapis.com', desc: 'One-time per project (admin may need to do this)' },
+  { n: '03', title: 'Grant BQ to runtime SA', cmd: 'gcloud projects add-iam-policy-binding vdc200006-mena-eng-dev --member="serviceAccount:analytics-webapp@vdc200006-mena-eng-dev.iam.gserviceaccount.com" --role="roles/bigquery.dataViewer"', desc: 'Also add roles/bigquery.jobUser' },
+  { n: '04', title: 'Deploy to Cloud Run', cmd: 'gcloud builds submit --config cloudbuild.yaml', desc: 'Builds Docker image and deploys analytics-webapp' },
+  { n: '05', title: 'Get service URL', cmd: 'gcloud run services describe analytics-webapp --region us-central1 --format="value(status.url)"', desc: 'Internal ingress — use VPN or gcloud run services proxy' },
 ];
 
 const APP_YAML = `runtime: nodejs18
@@ -159,7 +158,10 @@ END AS hit_revenue_usd`}
       <div className="card">
         <div className="settings-section-title">Deploy to GCP — Step-by-step</div>
         <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 16 }}>
-          Deploy this webapp to Google App Engine for a permanent URL with automatic BigQuery auth via workload identity.
+          Deploy to Cloud Run via Cloud Build. Live data:
+          {' '}
+          <code>vdc200006-mena-eng-dev.RHQ_INSIGHTS.User_Journey_Analysis_Adobe</code>
+          . See <code>DEPLOY.md</code> in the repo root.
         </div>
 
         {/* app.yaml */}
@@ -191,8 +193,11 @@ END AS hit_revenue_usd`}
         </div>
 
         <div style={{ marginTop: 16, padding: 14, background: '#dbeafe', borderRadius: 8, fontSize: 12, color: '#1e40af' }}>
-          <strong>On GCP, OAuth tokens are not needed.</strong> The App Engine service account automatically
-          authenticates with BigQuery. Just grant it <code>roles/bigquery.dataViewer</code> on your dataset.
+          <strong>On Cloud Run, OAuth tokens are not needed.</strong> The runtime service account
+          {' '}
+          <code>analytics-webapp@vdc200006-mena-eng-dev.iam.gserviceaccount.com</code>
+          {' '}
+          queries BigQuery server-side. Grant it <code>roles/bigquery.dataViewer</code> and <code>roles/bigquery.jobUser</code>.
         </div>
       </div>
     </>

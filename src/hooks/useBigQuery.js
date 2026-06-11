@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useCallback } from 'react';
-import { BQ_CONFIG } from '../config/bigquery';
+import { BQ_CONFIG, BQ_TABLE_FQ } from '../config/bigquery';
 
 const BQ_BASE = `https://bigquery.googleapis.com/bigquery/v2/projects/${BQ_CONFIG.projectId}/queries`;
 
@@ -60,7 +60,7 @@ export function buildAnalysisQuery({ analysis, dateFrom, dateTo, limit = 500 }) 
   return `
     SELECT date, analysis, dimension, sort_order,
            metric_1, metric_2, metric_3, metric_4, metric_5, metric_6
-    FROM \`${BQ_CONFIG.projectId}.${BQ_CONFIG.dataset}.analytics_results\`
+    FROM ${BQ_TABLE_FQ}
     WHERE analysis = '${analysis}'
       ${dateFrom ? `AND date >= '${dateFrom}'` : ''}
       ${dateTo   ? `AND date <= '${dateTo}'`   : ''}
@@ -78,7 +78,7 @@ export function buildCustomQuery({ metrics, dimensions, filters, dateFrom, dateT
 
   return `
     SELECT date, dimension, ${metricCols}
-    FROM \`${BQ_CONFIG.projectId}.${BQ_CONFIG.dataset}.analytics_results\`
+    FROM ${BQ_TABLE_FQ}
     WHERE 1=1
       ${dateFrom ? `AND date >= '${dateFrom}'` : ''}
       ${dateTo   ? `AND date <= '${dateTo}'`   : ''}

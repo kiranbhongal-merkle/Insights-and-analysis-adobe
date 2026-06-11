@@ -11,7 +11,7 @@ substitutions:
   _REPO: webapp
   _SERVICE: analytics-webapp
   _BQ_DATASET: 'RHQ_INSIGHTS'
-  _BQ_TABLE: 'User_Journey_Analysis'
+  _BQ_TABLE: 'User_Journey_Analysis_Adobe'
   _RUNTIME_SA: 'analytics-webapp@${PROJECT_ID}.iam.gserviceaccount.com'
   # internal = VPN/VPC only (recommended). Use "all" for a public URL.
   _INGRESS: internal
@@ -47,7 +47,7 @@ steps:
       - '--service-account=${_RUNTIME_SA}'
       - '--ingress=${_INGRESS}'
       - '--allow-unauthenticated'
-      - '--set-env-vars=BQ_PROJECT=${PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE}'
+      - '--set-env-vars=BQ_PROJECT=${PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE},BQ_LOCATION=US'
       - '--revision-suffix=${SHORT_SHA}'
 
 images:

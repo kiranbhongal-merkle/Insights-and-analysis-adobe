@@ -28,6 +28,12 @@ import {
 
 const num = (v) => (v == null ? '' : Number(v).toLocaleString());
 
+/** Shorten long path-style labels for PowerPoint chart axes. */
+export function formatPptLabel(label, maxLen = 34) {
+  const s = String(label ?? '').replace(/:/g, ' › ');
+  return s.length <= maxLen ? s : `${s.slice(0, maxLen - 1)}…`;
+}
+
 // PowerPoint number-format codes used for native chart data labels.
 const FMT = {
   COUNT: '#,##0',
@@ -43,6 +49,7 @@ function overviewSection() {
   return {
     id: 'overview',
     title: 'Overview',
+    subtitle: 'Site-wide traffic, conversion and revenue snapshot',
     kpis: [
       { label: 'Total Visits', value: fmtNum(s.visits) },
       { label: 'Conversions', value: num(s.conv) },
@@ -83,6 +90,7 @@ function funnelSection() {
   return {
     id: 'funnel',
     title: 'Conversion Funnel',
+    subtitle: 'Session progression and drop-off at each funnel step',
     kpis: [],
     insights: buildFunnelInsights(funnel),
     chart: {
@@ -116,6 +124,7 @@ function segmentSection({ id, title, datasetKey, noun, nounPlural, insights }) {
   return {
     id,
     title,
+    subtitle: `Performance breakdown by ${noun}`,
     kpis: [
       { label: 'Total Visits', value: fmtNum(summary.visits) },
       { label: 'Conversions', value: num(summary.conv) },
@@ -156,6 +165,7 @@ function deviceSection() {
   return {
     id: 'device',
     title: 'Device',
+    subtitle: 'Purchase and abandonment patterns by device type',
     kpis: [
       { label: 'Total Visits', value: fmtNum(summary.visits) },
       { label: 'Purchases', value: num(summary.conv) },
@@ -194,9 +204,11 @@ function exitsSection() {
   const totExits = data.reduce((s, r) => s + (r.exits || 0), 0);
   const totPv = data.reduce((s, r) => s + (r.pv || 0), 0);
   const sorted = [...data].sort((a, b) => b.rate - a.rate);
+  const byExits = [...data].sort((a, b) => b.exits - a.exits);
   return {
     id: 'exits',
     title: 'Page Exits',
+    subtitle: 'Where sessions end and which pages leak traffic',
     kpis: [
       { label: 'Total exits', value: fmtNum(totExits) },
       { label: 'Pageviews', value: fmtNum(totPv) },
@@ -206,19 +218,23 @@ function exitsSection() {
     chart: {
       title: 'Exit rate % by page',
       type: 'bar', barDir: 'bar', fmtCode: FMT.PCT,
-      labels: sorted.map(r => String(r.label)),
+      labelMax: 30,
+      labels: sorted.map(r => formatPptLabel(r.label, 30)),
       values: sorted.map(r => r.rate),
+      barColors: sorted.map(r => (r.rate >= 60 ? 'C0392B' : r.rate >= 40 ? 'D17F12' : '3266AD')),
     },
     chart2: {
       title: 'Exit volume by page',
       type: 'bar', barDir: 'bar', fmtCode: FMT.COUNT,
-      labels: [...data].sort((a, b) => (b.exits ?? 0) - (a.exits ?? 0)).map(r => String(r.label)),
-      values: [...data].sort((a, b) => (b.exits ?? 0) - (a.exits ?? 0)).map(r => r.exits ?? 0),
+      labelMax: 30,
+      labels: byExits.map(r => formatPptLabel(r.label, 30)),
+      values: byExits.map(r => r.exits ?? 0),
+      chartColor: '3266AD',
     },
     table: {
       title: 'Exit page detail',
       columns: ['Page', 'Exits', 'Pageviews', 'Exit rate'],
-      rows: sorted.map(r => [String(r.label), fmtNum(r.exits), fmtNum(r.pv), `${r.rate}%`]),
+      rows: sorted.map(r => [formatPptLabel(r.label, 42), fmtNum(r.exits), fmtNum(r.pv), `${r.rate}%`]),
     },
   };
 }

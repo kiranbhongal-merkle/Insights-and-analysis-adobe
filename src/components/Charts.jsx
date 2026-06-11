@@ -14,12 +14,91 @@ const TIP_STYLE = {
 const AXIS_TICK = { fontSize: 10, fill: 'var(--text2)' };
 const AXIS_TICK_SM = { fontSize: 11, fill: 'var(--text2)' };
 
+function truncateLabel(text, maxLen) {
+  const s = String(text ?? '');
+  if (s.length <= maxLen) return s;
+  return `${s.slice(0, maxLen - 1)}…`;
+}
+
+/** Break long path-style labels across lines at natural separators. */
+export function wrapCategoryLabel(text, maxLen = 34) {
+  const s = String(text ?? '');
+  if (s.length <= maxLen) return [s];
+  const lines = [];
+  let rest = s;
+  while (rest.length > maxLen) {
+    let breakAt = -1;
+    for (let i = Math.min(maxLen, rest.length - 1); i > Math.floor(maxLen * 0.45); i -= 1) {
+      if ('/:-_'.includes(rest[i])) {
+        breakAt = i + 1;
+        break;
+      }
+    }
+    if (breakAt <= 0) breakAt = maxLen;
+    lines.push(rest.slice(0, breakAt));
+    rest = rest.slice(breakAt);
+  }
+  if (rest) lines.push(rest);
+  return lines.length ? lines : [s];
+}
+
+function wrappedLabelLineCounts(data, yKey, maxLen) {
+  return (data || []).map(row => wrapCategoryLabel(row[yKey], maxLen).length);
+}
+
+/** Y-axis tick that truncates long labels but keeps the full value in SVG title tooltip. */
+function CategoryYAxisTick({ x, y, payload, maxChars = 42 }) {
+  const full = String(payload?.value ?? '');
+  const shown = truncateLabel(full, maxChars);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <title>{full}</title>
+      <text
+        x={0}
+        y={0}
+        dy={4}
+        textAnchor="end"
+        fill="var(--text2)"
+        fontSize={11}
+      >
+        {shown}
+      </text>
+    </g>
+  );
+}
+
+/** Multi-line Y-axis tick — labels left-aligned in the category column, full text wrapped. */
+function WrappedCategoryYAxisTick({ x, y, payload, charsPerLine = 34, labelWidth = 280 }) {
+  const full = String(payload?.value ?? '');
+  const lines = wrapCategoryLabel(full, charsPerLine);
+  const lineHeight = 14;
+  const blockTop = -((lines.length - 1) * lineHeight) / 2;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <title>{full}</title>
+      {lines.map((line, i) => (
+        <text
+          key={`${i}-${line.slice(0, 8)}`}
+          x={-(labelWidth - 4)}
+          y={blockTop + i * lineHeight}
+          dy={4}
+          textAnchor="start"
+          fill="var(--text2)"
+          fontSize={11}
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+}
+
 function categoryAxisWidth(data, key, { min = 120, max = 220 } = {}) {
   const longest = (data || []).reduce(
     (m, row) => Math.max(m, String(row[key] ?? row.dim ?? row.label ?? '').length),
     0,
   );
-  return Math.min(max, Math.max(min, longest * 7 + 20));
+  return Math.min(max, Math.max(min, longest * 6.5 + 24));
 }
 
 function numericAxisWidth(data, key, formatter = fmtNum) {
@@ -50,12 +129,27 @@ export function sharedNumericAxisWidth(entries) {
   );
 }
 
-export function sharedCategoryAxisWidth(entries) {
+export function sharedCategoryAxisWidth(entries, { max = 220 } = {}) {
   return entries.reduce(
-    (max, { data, key }) => Math.max(max, categoryAxisWidth(data, key)),
+    (widest, { data, key }) => Math.max(widest, categoryAxisWidth(data, key, { max })),
     120,
   );
 }
+
+function spreadPercentDomain(data, key) {
+  const vals = (data || []).map(r => Number(r[key])).filter(v => Number.isFinite(v));
+  if (!vals.length) return [0, 100];
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const spread = max - min;
+  if (spread < 1.5) {
+    return [Math.max(0, Math.floor(min - 2)), Math.min(100, Math.ceil(max + 0.5))];
+  }
+  const pad = spread * 0.12;
+  return [Math.max(0, min - pad), Math.min(100, max + pad)];
+}
+
+export { spreadPercentDomain };
 
 export function KPITrendChart({ data, height = 260 }) {
   const yLeft = numericAxisWidth(data, 'visits', fmtNum);
@@ -103,10 +197,17 @@ export function RevenueChart({ data, height = 200 }) {
 
 export function HBarChart({
   data, xKey, yKey, colorFn, height = 300, formatX = fmtNum,
-  onBarClick, yAxisWidth: yAxisWidthOverride,
+  onBarClick, yAxisWidth: yAxisWidthOverride, categoryMax = 220,
+  labelMaxChars, wrapYLabels = false, categoryWidth = 280, charsPerLine = 34,
 }) {
-  const h = Math.max(height, data.length * 38 + 60);
-  const yWidth = yAxisWidthOverride ?? categoryAxisWidth(data, yKey, { min: 48, max: 72 });
+  const lineCounts = wrapYLabels ? wrappedLabelLineCounts(data, yKey, charsPerLine) : null;
+  const maxLines = lineCounts ? Math.max(1, ...lineCounts) : 1;
+  const rowPitch = wrapYLabels ? 22 + maxLines * 14 : 38;
+  const h = Math.max(height, data.length * rowPitch + 60);
+  const yWidth = wrapYLabels
+    ? categoryWidth
+    : (yAxisWidthOverride ?? categoryAxisWidth(data, yKey, { min: 48, max: categoryMax }));
+  const maxChars = labelMaxChars ?? Math.max(18, Math.floor((yWidth - 16) / 6.5));
   const rightMargin = valueLabelMargin(data, xKey, formatX);
   const handleBarClick = onBarClick
     ? (_, index) => {
@@ -115,13 +216,20 @@ export function HBarChart({
       }
     : undefined;
 
+  const tick = wrapYLabels
+    ? <WrappedCategoryYAxisTick charsPerLine={charsPerLine} labelWidth={yWidth} />
+    : <CategoryYAxisTick maxChars={maxChars} />;
+
   return (
-    <div className={`chart-wrap${onBarClick ? ' chart-wrap--clickable' : ''}`} style={{ height: h }}>
+    <div
+      className={`chart-wrap${onBarClick ? ' chart-wrap--clickable' : ''}${wrapYLabels ? ' chart-wrap--hbar-left' : ''}`}
+      style={{ height: h }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 8, left: 8, right: rightMargin, bottom: 8 }}
+          margin={{ top: 8, left: wrapYLabels ? 0 : 8, right: rightMargin, bottom: 8 }}
         >
           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
           <XAxis
@@ -137,10 +245,11 @@ export function HBarChart({
             type="category"
             dataKey={yKey}
             width={yWidth}
-            tick={AXIS_TICK_SM}
             tickLine={false}
             axisLine={false}
-            tickMargin={10}
+            tickMargin={wrapYLabels ? 4 : 10}
+            interval={0}
+            tick={tick}
           />
           <Tooltip contentStyle={TIP_STYLE} formatter={v => formatX(v)} />
           <Bar
@@ -168,7 +277,7 @@ export function HBarChart({
 
 export function VBarChart({
   data, bars, height = 260, xKey = 'dim', onBarClick, yTickFormatter,
-  yAxisWidth: yAxisWidthOverride, hideLegend,
+  yAxisWidth: yAxisWidthOverride, hideLegend, yDomain,
 }) {
   const tickFmt = yTickFormatter ?? fmtNum;
   const primaryKey = bars[0]?.key;
@@ -181,6 +290,7 @@ export function VBarChart({
   const xAngle = longestLabel <= 5 ? 0 : -28;
   const xAnchor = longestLabel <= 5 ? 'middle' : 'end';
   const showLegend = hideLegend != null ? !hideLegend : bars.length > 1;
+  const computedYDomain = yDomain ?? [0, (dataMax) => (dataMax > 0 ? dataMax * 1.12 : 1)];
   const handleBarClick = onBarClick
     ? (_, index) => {
         const row = data[index];
@@ -211,7 +321,7 @@ export function VBarChart({
             tickLine={false}
             axisLine={false}
             tickMargin={6}
-            domain={[0, (dataMax) => (dataMax > 0 ? dataMax * 1.12 : 1)]}
+            domain={computedYDomain}
           />
           <Tooltip contentStyle={TIP_STYLE} formatter={tickFmt} />
           {showLegend && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} verticalAlign="top" />}

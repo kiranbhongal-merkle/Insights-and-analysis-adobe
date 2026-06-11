@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
-import { HBarChart } from './Charts';
+import { HBarChart, sharedCategoryAxisWidth } from './Charts';
 import InfoHint from './InfoHint';
 import DrillPathBar from './DrillPathBar';
 import DownloadCsvButton from './DownloadCsvButton';
@@ -63,6 +63,11 @@ export default function MetricDrilldownModal({ kpi, totalValue, onClose }) {
   const chartData = useMemo(
     () => rows.map(r => ({ dim: r.dimension, value: r.primary })),
     [rows],
+  );
+
+  const drillYAxisWidth = useMemo(
+    () => sharedCategoryAxisWidth([{ data: chartData, key: 'dim' }], { max: 420 }),
+    [chartData],
   );
 
   const totals = useMemo(() => aggregateDrillRows(rows), [rows]);
@@ -179,6 +184,8 @@ export default function MetricDrilldownModal({ kpi, totalValue, onClose }) {
               formatX={config.formatPrimary}
               colorFn={() => kpi.color}
               height={Math.min(420, rows.length * 40 + 80)}
+              yAxisWidth={drillYAxisWidth}
+              categoryMax={420}
               onBarClick={canDrillDeeper ? handleRowDrill : undefined}
             />
           ) : (
