@@ -14,7 +14,7 @@ substitutions:
   _BQ_TABLE: 'User_Journey_Analysis_Adobe'
   _RUNTIME_SA: 'user-journey-analysis-adobe@${PROJECT_ID}.iam.gserviceaccount.com'
   # internal = VPN/VPC only (recommended). Use "all" for a public URL.
-  _INGRESS: internal
+  _INGRESS: all
 
 steps:
   - id: build
